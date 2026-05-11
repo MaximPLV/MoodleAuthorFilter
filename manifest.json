@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Moodle Author Filter",
+  "version": "1.0.0",
+  "description": "Show only actual author submissions on Moodle assignment grading pages.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://moodle.informatik.tu-darmstadt.de/mod/assign/view.php*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
