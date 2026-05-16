@@ -115,10 +115,10 @@
     return new URLSearchParams(window.location.search).get("id") || "";
   }
 
-  function readAuthorUserIds(cmid) {
-    if (!cmid) return [];
+  function readAuthorUserIds(courseModuleId) {
+    if (!courseModuleId) return [];
     try {
-      const raw = localStorage.getItem(AUTHOR_IDS_PREFIX + cmid);
+      const raw = localStorage.getItem(AUTHOR_IDS_PREFIX + courseModuleId);
       if (!raw) return [];
       const parsed = JSON.parse(raw);
       if (!Array.isArray(parsed)) return [];
@@ -128,26 +128,26 @@
     }
   }
 
-  function readFilterEnabled(cmid) {
-    if (!cmid) return true;
-    const raw = localStorage.getItem(FILTER_ENABLED_PREFIX + cmid);
+  function readFilterEnabled(courseModuleId) {
+    if (!courseModuleId) return true;
+    const raw = localStorage.getItem(FILTER_ENABLED_PREFIX + courseModuleId);
     if (raw === null) return true;
     return raw === "1";
   }
 
-  function writeFilterEnabled(cmid, enabled) {
-    if (!cmid) return;
-    localStorage.setItem(FILTER_ENABLED_PREFIX + cmid, enabled ? "1" : "0");
+  function writeFilterEnabled(courseModuleId, enabled) {
+    if (!courseModuleId) return;
+    localStorage.setItem(FILTER_ENABLED_PREFIX + courseModuleId, enabled ? "1" : "0");
   }
 
   function isFilterEnabledForCurrentAssignment() {
     return readFilterEnabled(getCourseModuleId());
   }
 
-  function readAuthorMeta(cmid) {
-    if (!cmid) return null;
+  function readAuthorMeta(courseModuleId) {
+    if (!courseModuleId) return null;
     try {
-      const raw = localStorage.getItem(AUTHOR_META_PREFIX + cmid);
+      const raw = localStorage.getItem(AUTHOR_META_PREFIX + courseModuleId);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (
@@ -162,17 +162,17 @@
     }
   }
 
-  function writeAuthorMeta(cmid, totalRows, authorRows) {
-    if (!cmid) return;
+  function writeAuthorMeta(courseModuleId, totalRows, authorRows) {
+    if (!courseModuleId) return;
     localStorage.setItem(
-      AUTHOR_META_PREFIX + cmid,
+      AUTHOR_META_PREFIX + courseModuleId,
       JSON.stringify({ totalRows, authorRows })
     );
   }
 
-  function writeAuthorUserIds(cmid, userIds) {
-    if (!cmid || !Array.isArray(userIds) || userIds.length === 0) return;
-    localStorage.setItem(AUTHOR_IDS_PREFIX + cmid, JSON.stringify(userIds));
+  function writeAuthorUserIds(courseModuleId, userIds) {
+    if (!courseModuleId || !Array.isArray(userIds) || userIds.length === 0) return;
+    localStorage.setItem(AUTHOR_IDS_PREFIX + courseModuleId, JSON.stringify(userIds));
   }
 
   function collectAllowedAuthorUserIds(table, usernameIndex, authorGroupIndices) {
@@ -216,14 +216,14 @@
     }
 
     const rows = [...table.querySelectorAll("tbody tr")].filter(isRealSubmissionRow);
-    const cmid = getCourseModuleId();
+    const courseModuleId = getCourseModuleId();
     const allowedAuthorIds = collectAllowedAuthorUserIds(
       table,
       usernameIndex,
       authorGroupIndices
     );
-    writeAuthorUserIds(cmid, allowedAuthorIds);
-    writeAuthorMeta(cmid, rows.length, allowedAuthorIds.length);
+    writeAuthorUserIds(courseModuleId, allowedAuthorIds);
+    writeAuthorMeta(courseModuleId, rows.length, allowedAuthorIds.length);
 
     let visible = 0;
     let hidden = 0;
@@ -236,7 +236,7 @@
         row.setAttribute(EXT_HIDDEN_ATTR, "1");
         hidden++;
       } else {
-        // Only unhide rows that were hidden by this extension.
+        // only unhide rows that were hidden by this extension.
         if (row.getAttribute(EXT_HIDDEN_ATTR) === "1") {
           row.style.display = "";
           row.removeAttribute(EXT_HIDDEN_ATTR);
@@ -256,51 +256,88 @@
   function createToggle() {
     if (document.getElementById(FILTER_ID)) return;
 
+    const isGrader = document.body?.id?.includes(GRADER_PAGE_ID);
+    const courseModuleId = getCourseModuleId();
+    const enabled = readFilterEnabled(courseModuleId);
+
     const container = document.createElement("div");
     container.id = FILTER_ID;
-    container.className = "navitem m-0";
 
-    const wrapper = document.createElement("div");
-    wrapper.className = "form-check align-self-center";
-    wrapper.innerHTML = `
-      <input class="form-check-input" type="checkbox" id="moodle-author-filter-checkbox" checked>
-      <label class="form-check-label" for="moodle-author-filter-checkbox">Only author submissions</label>
-      <span id="moodle-author-filter-counter" style="font-size: 0.9em; color: #555; margin-left: 8px;"></span>
-    `;
-    container.appendChild(wrapper);
+    const checkboxId = "moodle-author-filter-checkbox";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.id = checkboxId;
+    checkbox.checked = enabled;
 
-    const tertiaryRow = document.querySelector(
-      ".container-fluid.tertiary-navigation.pt-0 .row.pb-2"
-    );
+    const label = document.createElement("label");
+    label.htmlFor = checkboxId;
+    label.textContent = "Only author submissions";
 
-    if (tertiaryRow) {
-      const divider = document.createElement("div");
-      divider.className = "navitem-divider m-0";
-      tertiaryRow.appendChild(divider);
-      tertiaryRow.appendChild(container);
+    if (isGrader) {
+      container.style.cssText =
+        "display:inline-flex; align-items:center; gap:6px; margin-left:12px; font-size:0.85em;";
+      label.style.cssText = "margin:0; cursor:pointer;";
+
+      container.appendChild(checkbox);
+      container.appendChild(label);
+
+      const userCount = document.querySelector('[data-region="user-count"]');
+      if (userCount) {
+        userCount.parentNode.insertBefore(container, userCount.nextSibling);
+      } else {
+        const selector = document.querySelector('[data-region="user-selector"]');
+        if (selector) selector.appendChild(container);
+      }
+
+      checkbox.addEventListener("change", () => {
+        writeFilterEnabled(courseModuleId, checkbox.checked);
+        window.location.reload();
+      });
     } else {
-      const table = document.querySelector(TABLE_SELECTOR);
-      const fallbackTarget =
-        table?.closest(".gradingtable") ||
-        document.querySelector("#region-main") ||
-        document.body;
-      fallbackTarget.prepend(container);
+      container.className = "navitem m-0";
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "form-check align-self-center";
+
+      checkbox.className = "form-check-input";
+      label.className = "form-check-label";
+
+      const counter = document.createElement("span");
+      counter.id = "moodle-author-filter-counter";
+      counter.style.cssText = "font-size: 0.9em; color: #555; margin-left: 8px;";
+
+      wrapper.appendChild(checkbox);
+      wrapper.appendChild(label);
+      wrapper.appendChild(counter);
+      container.appendChild(wrapper);
+
+      const tertiaryRow = document.querySelector(
+        ".container-fluid.tertiary-navigation.pt-0 .row.pb-2"
+      );
+
+      if (tertiaryRow) {
+        const divider = document.createElement("div");
+        divider.className = "navitem-divider m-0";
+        tertiaryRow.appendChild(divider);
+        tertiaryRow.appendChild(container);
+      } else {
+        const table = document.querySelector(TABLE_SELECTOR);
+        const fallbackTarget =
+          table?.closest(".gradingtable") ||
+          document.querySelector("#region-main") ||
+          document.body;
+        fallbackTarget.prepend(container);
+      }
+
+      checkbox.addEventListener("change", () => {
+        writeFilterEnabled(courseModuleId, checkbox.checked);
+        applyFilter(checkbox.checked);
+      });
     }
-
-    const checkbox = container.querySelector("#moodle-author-filter-checkbox");
-    const cmid = getCourseModuleId();
-    checkbox.checked = readFilterEnabled(cmid);
-
-    checkbox.addEventListener("change", () => {
-      writeFilterEnabled(cmid, checkbox.checked);
-      applyFilter(checkbox.checked);
-    });
   }
 
   function init() {
     if (!document.body?.id?.includes(GRADING_PAGE_ID)) return;
-
-    createToggle();
 
     const checkbox = document.querySelector("#moodle-author-filter-checkbox");
     applyFilter(checkbox?.checked ?? true);
@@ -348,8 +385,8 @@
     const summary = document.querySelector('[data-region="user-count-summary"]');
     if (!summary) return;
 
-    const cmid = getCourseModuleId();
-    const meta = readAuthorMeta(cmid);
+    const courseModuleId = getCourseModuleId();
+    const meta = readAuthorMeta(courseModuleId);
     const baselineTotal =
       typeof meta?.totalRows === "number" ? meta.totalRows : authorIds.length;
     const hiddenCount = Math.max(0, baselineTotal - authorIds.length);
@@ -472,6 +509,7 @@
   }
 
   init();
+  createToggle();
   wireAuthorOnlyGraderNavigation();
   enforceAuthorOnlyOnGraderEntry();
   filterGraderDropdown();
@@ -481,6 +519,7 @@
     clearTimeout(window.__moodleAuthorFilterTimer);
     window.__moodleAuthorFilterTimer = setTimeout(() => {
       init();
+      createToggle();
       wireAuthorOnlyGraderNavigation();
       enforceAuthorOnlyOnGraderEntry();
       filterGraderDropdown();
