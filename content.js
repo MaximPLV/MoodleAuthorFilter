@@ -318,8 +318,11 @@
     return readAuthorUserIds(getCourseModuleId());
   }
 
+  let graderNavigating = false;
+
   function navigateToGraderUser(userId) {
     if (!/^\d+$/.test(String(userId))) return;
+    graderNavigating = true;
     const url = new URL(window.location.href);
     url.searchParams.set("action", "grader");
     url.searchParams.set("userid", String(userId));
@@ -383,28 +386,53 @@
 
     if (document.body.dataset.moodleAuthorFilterGraderWired === "1") return;
 
-    prevButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      const ids = getAuthorIdsForCurrentAssignment();
-      const idx = findCurrentIndex(ids, getCurrentGraderUserId());
-      if (idx > 0) {
-        navigateToGraderUser(ids[idx - 1]);
-      }
-    });
+    function replaceButton(original) {
+      const clone = original.cloneNode(true);
+      original.parentNode.replaceChild(clone, original);
+      return clone;
+    }
 
-    nextButton.addEventListener("click", (event) => {
-      event.preventDefault();
-      const ids = getAuthorIdsForCurrentAssignment();
-      const idx = findCurrentIndex(ids, getCurrentGraderUserId());
-      if (idx >= 0 && idx < ids.length - 1) {
-        navigateToGraderUser(ids[idx + 1]);
-      }
-    });
+    const freshPrev = replaceButton(prevButton);
+    const freshNext = replaceButton(nextButton);
+
+    setNavButtonDisabled(freshPrev, !hasPrev);
+    setNavButtonDisabled(freshNext, !hasNext);
+
+    freshPrev.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        const ids = getAuthorIdsForCurrentAssignment();
+        const idx = findCurrentIndex(ids, getCurrentGraderUserId());
+        if (idx > 0) {
+          navigateToGraderUser(ids[idx - 1]);
+        }
+      },
+      true
+    );
+
+    freshNext.addEventListener(
+      "click",
+      (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        const ids = getAuthorIdsForCurrentAssignment();
+        const idx = findCurrentIndex(ids, getCurrentGraderUserId());
+        if (idx >= 0 && idx < ids.length - 1) {
+          navigateToGraderUser(ids[idx + 1]);
+        }
+      },
+      true
+    );
 
     document.body.dataset.moodleAuthorFilterGraderWired = "1";
   }
 
   function enforceAuthorOnlyOnGraderEntry() {
+    if (graderNavigating) return;
     if (!document.body?.id?.includes(GRADER_PAGE_ID)) return;
     if (!isFilterEnabledForCurrentAssignment()) return;
     const authorIds = getAuthorIdsForCurrentAssignment();
@@ -414,20 +442,48 @@
     if (!currentUserId) return;
     if (!authorIds.includes(currentUserId)) {
       navigateToGraderUser(authorIds[0]);
-      return;
+    }
+  }
+
+  function filterGraderDropdown() {
+    if (!document.body?.id?.includes(GRADER_PAGE_ID)) return;
+    if (!isFilterEnabledForCurrentAssignment()) return;
+
+    const authorIds = getAuthorIdsForCurrentAssignment();
+    if (authorIds.length === 0) return;
+
+    const suggestionLists = document.querySelectorAll(
+      ".form-autocomplete-suggestions"
+    );
+    for (const list of suggestionLists) {
+      const items = list.querySelectorAll('[role="option"]');
+      for (const item of items) {
+        const value = item.getAttribute("data-value");
+        if (!value) continue;
+        if (authorIds.includes(value)) {
+          item.style.display = "";
+          item.removeAttribute(EXT_HIDDEN_ATTR);
+        } else {
+          item.style.display = "none";
+          item.setAttribute(EXT_HIDDEN_ATTR, "1");
+        }
+      }
     }
   }
 
   init();
   wireAuthorOnlyGraderNavigation();
   enforceAuthorOnlyOnGraderEntry();
+  filterGraderDropdown();
 
   const observer = new MutationObserver(() => {
+    if (graderNavigating) return;
     clearTimeout(window.__moodleAuthorFilterTimer);
     window.__moodleAuthorFilterTimer = setTimeout(() => {
       init();
       wireAuthorOnlyGraderNavigation();
       enforceAuthorOnlyOnGraderEntry();
+      filterGraderDropdown();
     }, 150);
   });
 
