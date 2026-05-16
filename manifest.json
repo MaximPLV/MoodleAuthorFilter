@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Moodle Author Filter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Show only actual author submissions on Moodle assignment grading pages.",
   "icons": {
     "16": "icons/icon16.png",
