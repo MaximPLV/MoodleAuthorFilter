@@ -356,6 +356,7 @@
   }
 
   let graderNavigating = false;
+  let lastAuthorIndex = -1;
 
   function navigateToGraderUser(userId) {
     if (!/^\d+$/.test(String(userId))) return;
@@ -411,6 +412,7 @@
     const authorIds = getAuthorIdsForCurrentAssignment();
     const currentUserId = getCurrentGraderUserId();
     const currentIndex = findCurrentIndex(authorIds, currentUserId);
+    if (currentIndex >= 0) lastAuthorIndex = currentIndex;
     const hasPrev = currentIndex > 0;
     const hasNext = currentIndex >= 0 && currentIndex < authorIds.length - 1;
 
@@ -478,7 +480,10 @@
     const currentUserId = getCurrentGraderUserId();
     if (!currentUserId) return;
     if (!authorIds.includes(currentUserId)) {
-      navigateToGraderUser(authorIds[0]);
+      const nextIndex = lastAuthorIndex + 1;
+      if (nextIndex < authorIds.length) {
+        navigateToGraderUser(authorIds[nextIndex]);
+      }
     }
   }
 
