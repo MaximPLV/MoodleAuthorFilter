@@ -3,6 +3,21 @@
   "name": "Moodle Author Filter",
   "version": "1.0.0",
   "description": "Show only actual author submissions on Moodle assignment grading pages.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Moodle Author Filter"
+  },
   "content_scripts": [
     {
       "matches": [
