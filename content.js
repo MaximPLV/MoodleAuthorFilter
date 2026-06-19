@@ -513,11 +513,29 @@
     }
   }
 
+  function ensureFeedbackForAllChecked() {
+    const checkbox = document.querySelector(
+        "#id_assignfeedbackauthor_feedbackforall, input[name='assignfeedbackauthor_feedbackforall']"
+    );
+
+    if (!checkbox) return;
+
+    if (!checkbox.checked) {
+      checkbox.checked = true;
+      checkbox.setAttribute("checked", "checked");
+      checkbox.setAttribute("data-initial-value", "1");
+
+      checkbox.dispatchEvent(new Event("input", { bubbles: true }));
+      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+
   init();
   createToggle();
   wireAuthorOnlyGraderNavigation();
   enforceAuthorOnlyOnGraderEntry();
   filterGraderDropdown();
+  ensureFeedbackForAllChecked();
 
   const observer = new MutationObserver(() => {
     if (graderNavigating) return;
