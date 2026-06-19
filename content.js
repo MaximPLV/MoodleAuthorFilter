@@ -119,12 +119,16 @@
     return URL_PARAMS.get("action") || "";
   }
 
+  function isAssignViewPage() {
+    return window.location.pathname === "/mod/assign/view.php";
+  }
+
   function isGradingPage() {
-    return getAssignAction() === "grading";
+    return isAssignViewPage() && getAssignAction() === "grading";
   }
 
   function isGraderPage() {
-    return getAssignAction() === "grader";
+    return isAssignViewPage() && getAssignAction() === "grader";
   }
 
   function readAuthorUserIds(courseModuleId) {
@@ -529,6 +533,7 @@
   let feedbackForAllInitialized = false;
 
   function ensureFeedbackForAllChecked() {
+    if (!isGraderPage()) return;
     if (feedbackForAllInitialized) return;
 
     const checkbox = document.querySelector(
