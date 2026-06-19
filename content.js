@@ -2,8 +2,6 @@
   const TABLE_SELECTOR = "table#submissions";
   const FILTER_ID = "moodle-author-filter-toggle";
   const EXT_HIDDEN_ATTR = "data-moodle-author-filter-hidden";
-  const GRADER_PAGE_ID = "page-mod-assign-grader";
-  const GRADING_PAGE_ID = "page-mod-assign-grading";
   const AUTHOR_IDS_PREFIX = "moodleAuthorFilterAuthorIds:";
   const AUTHOR_META_PREFIX = "moodleAuthorFilterAuthorMeta:";
   const FILTER_ENABLED_PREFIX = "moodleAuthorFilterEnabled:";
@@ -113,6 +111,18 @@
 
   function getCourseModuleId() {
     return new URLSearchParams(window.location.search).get("id") || "";
+  }
+
+  function getAssignAction() {
+    return new URLSearchParams(window.location.search).get("action") || "";
+  }
+
+  function isGradingPage() {
+    return getAssignAction() === "grading";
+  }
+
+  function isGraderPage() {
+    return getAssignAction() === "grader";
   }
 
   function readAuthorUserIds(courseModuleId) {
@@ -255,8 +265,9 @@
 
   function createToggle() {
     if (document.getElementById(FILTER_ID)) return;
+    if (!isGradingPage() && !isGraderPage()) return;
 
-    const isGrader = document.body?.id?.includes(GRADER_PAGE_ID);
+    const isGrader = isGraderPage();
     const courseModuleId = getCourseModuleId();
     const enabled = readFilterEnabled(courseModuleId);
 
@@ -337,7 +348,7 @@
   }
 
   function init() {
-    if (!document.body?.id?.includes(GRADING_PAGE_ID)) return;
+    if (!isGradingPage()) return;
 
     const checkbox = document.querySelector("#moodle-author-filter-checkbox");
     applyFilter(checkbox?.checked ?? true);
@@ -401,7 +412,7 @@
   }
 
   function wireAuthorOnlyGraderNavigation() {
-    if (!document.body?.id?.includes(GRADER_PAGE_ID)) return;
+    if (!isGraderPage()) return;
     if (!isFilterEnabledForCurrentAssignment()) return;
 
     const prevButton = document.querySelector('[data-action="previous-user"]');
@@ -472,7 +483,7 @@
 
   function enforceAuthorOnlyOnGraderEntry() {
     if (graderNavigating) return;
-    if (!document.body?.id?.includes(GRADER_PAGE_ID)) return;
+    if (!isGraderPage()) return;
     if (!isFilterEnabledForCurrentAssignment()) return;
     const authorIds = getAuthorIdsForCurrentAssignment();
     if (authorIds.length === 0) return;
@@ -488,7 +499,7 @@
   }
 
   function filterGraderDropdown() {
-    if (!document.body?.id?.includes(GRADER_PAGE_ID)) return;
+    if (!isGraderPage()) return;
     if (!isFilterEnabledForCurrentAssignment()) return;
 
     const authorIds = getAuthorIdsForCurrentAssignment();
