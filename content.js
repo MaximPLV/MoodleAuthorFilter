@@ -6,6 +6,8 @@
   const AUTHOR_META_PREFIX = "moodleAuthorFilterAuthorMeta:";
   const FILTER_ENABLED_PREFIX = "moodleAuthorFilterEnabled:";
 
+  const URL_PARAMS = new URLSearchParams(window.location.search);
+
   function normalize(text) {
     return (text || "")
       .replace(/\s+/g, " ")
@@ -110,11 +112,11 @@
   }
 
   function getCourseModuleId() {
-    return new URLSearchParams(window.location.search).get("id") || "";
+    return URL_PARAMS.get("id") || "";
   }
 
   function getAssignAction() {
-    return new URLSearchParams(window.location.search).get("action") || "";
+    return URL_PARAMS.get("action") || "";
   }
 
   function isGradingPage() {
@@ -524,7 +526,11 @@
     }
   }
 
+  let feedbackForAllInitialized = false;
+
   function ensureFeedbackForAllChecked() {
+    if (feedbackForAllInitialized) return;
+
     const checkbox = document.querySelector(
         "#id_assignfeedbackauthor_feedbackforall, input[name='assignfeedbackauthor_feedbackforall']"
     );
@@ -539,6 +545,8 @@
       checkbox.dispatchEvent(new Event("input", { bubbles: true }));
       checkbox.dispatchEvent(new Event("change", { bubbles: true }));
     }
+
+    feedbackForAllInitialized = true;
   }
 
   init();
@@ -557,6 +565,7 @@
       wireAuthorOnlyGraderNavigation();
       enforceAuthorOnlyOnGraderEntry();
       filterGraderDropdown();
+      ensureFeedbackForAllChecked();
     }, 150);
   });
 
