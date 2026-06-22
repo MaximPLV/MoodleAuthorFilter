@@ -2,8 +2,13 @@ Small browser extension for Moodle assignment grading pages.
 
 It shows only rows where the visible user is the actual group author.
 
-You can enable the filter with this new button:
+You can enable the filter with this new checkbox on the "Einreichungen" page (&action=grading):
 
 <img width="2206" height="314" alt="image" src="https://github.com/user-attachments/assets/ae0bae57-be51-46b9-8ff5-45ed322da587" />
 
-The filter also works correctly on the "Bewerten" page, but it's slightly buggy visually.
+The filter also works correctly on the "Bewerten" page (&action=grader). 
+
+Also this button is enabled by default now: 
+
+<img width="267" height="24" alt="image" src="https://github.com/user-attachments/assets/b496bd9b-6964-4ddd-90f0-a0100924eedb" />
+
